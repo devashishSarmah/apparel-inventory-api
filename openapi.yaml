@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: Apparel Inventory API
+  version: 1.0.0
+  description: Vendor apparel stock management.
+
+servers:
+  - url: http://localhost:8080
+
+components:
+  schemas:
+    SKU:
+      type: object
+      required: [code, size, qty, price]
+      properties:
+        code: { type: string, example: "TSHIRT-1001" }
+        size: { type: string, example: "M" }
+        qty: { type: integer, minimum: 0, example: 25 }
+        price: { type: number, format: float, minimum: 0, example: 19.99 }
+
+    AddOrUpdateResponse:
+      type: object
+      properties:
+        message: { type: string, example: "Item saved successfully" }
+
+    BulkAddOrUpdateResponse:
+      type: object
+      properties:
+        message: { type: string, example: "Items saved successfully" }
+
+    OrderLine:
+      type: object
+      required: [code, size, qty]
+      properties:
+        code: { type: string }
+        size: { type: string }
+        qty: { type: integer, minimum: 1 }
+
+    OrderCheckRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderLine" }
+
+    OrderCheckResponse:
+      type: object
+      required: [canFulfill]
+      properties:
+        canFulfill: { type: boolean }
+        total: { type: number, format: float, nullable: true }
+        message: { type: string, nullable: true }
+
+paths:
+  /inventory:
+    put:
+      summary: Create or Updates a single item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SKU" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+  /inventory/bulk:
+    put:
+      summary: Create or Updates multiple items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/SKU" }
+      responses:
+        "200":
+          description: Bulk update result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkUpsertResponse" }
+  /order/check:
+    post:
+      summary: Check if an order is fulfillable and get lowest total cost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderCheckRequest" }
+      responses:
+        "200":
+          description: Fulfillment result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderCheckResponse" }
